@@ -12,25 +12,25 @@ export default function SupportPage() {
         <div className="w-full max-w-md mb-8">
           <form className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-left block">
+              <Label htmlFor="name" className="text-left block mb-2">
                 Name
               </Label>
               <Input id="name" type="text" placeholder="Your Name" />
             </div>
             <div>
-              <Label htmlFor="family" className="text-left block">
+              <Label htmlFor="family" className="text-left block mb-2">
                 Family
               </Label>
               <Input id="family" type="text" placeholder="Your Family Name" />
             </div>
             <div>
-              <Label htmlFor="email" className="text-left block">
+              <Label htmlFor="email" className="text-left block mb-2">
                 Email
               </Label>
               <Input id="email" type="email" placeholder="Your Email" />
             </div>
             <div>
-              <Label htmlFor="message" className="text-left block">
+              <Label htmlFor="message" className="text-left block mb-2">
                 Message
               </Label>
               <Textarea id="message" placeholder="Your Message" />
