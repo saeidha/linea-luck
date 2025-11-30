@@ -89,7 +89,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 3) + 20; // 20 to 22 rotations
+        const randomRotations = Math.floor(Math.random() * 3) + 200; // 200 to 202 rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
