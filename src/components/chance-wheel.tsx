@@ -89,7 +89,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 5) + 8; // 8 to 12 rotations
+        const randomRotations = Math.floor(Math.random() * 3) + 10; // 10 to 12 rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
@@ -97,18 +97,14 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
 
         setShowSkip(true);
         const timeout = setTimeout(() => {
-          // This will be called if the animation ends, but we'll also handle the transition end event
-          // to make it more accurate.
           finishSpin(winningNumber);
-        }, 8000); 
+        }, 12000); 
         setSpinTimeout(timeout);
     };
 
     const handleSkip = () => {
         if (!spinning || !spinTimeout) return;
         
-        // This is a bit of a trick. We find out where the wheel is supposed to land
-        // and just jump there without animation.
         const currentTargetRotation = rotation;
         const fullRotations = Math.floor(currentTargetRotation / 360);
         const baseRotation = currentTargetRotation - (fullRotations * 360);
@@ -116,10 +112,8 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const segmentThatWouldWin = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
         const winningNumber = segments[segmentThatWouldWin];
 
-        // Jump to the final position without animation
         setRotation(currentTargetRotation);
         
-        // End the spin logic
         finishSpin(winningNumber);
     };
 
@@ -182,8 +176,17 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[8000ms] ease-[cubic-bezier(0.1,0.7,0.3,1)]"
+                    className="w-full h-full transition-transform duration-[12000ms] ease-[cubic-bezier(0.25,0.1,0.25,1.0)]"
                     style={{ transform: `rotate(${rotation}deg)` }}
+                    onTransitionEnd={() => {
+                        const currentTargetRotation = rotation;
+                        const fullRotations = Math.floor(currentTargetRotation / 360);
+                        const baseRotation = currentTargetRotation - (fullRotations * 360);
+
+                        const segmentThatWouldWin = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
+                        const winningNumber = segments[segmentThatWouldWin];
+                        finishSpin(winningNumber);
+                    }}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                         {segments.map((segment, index) => (
