@@ -9,6 +9,6 @@ export function LineaIcon(props: Omit<React.ComponentProps<typeof Image>, 'src' 
 
 export function AtbIcon(props: Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>) {
     return (
-        <Image src="/assets/Linea-Luck.png" alt="Linea Luck" {...props} />
+        <Image src="/assets/Linea-Luck.png" alt="Linea Luck" width={512} height={512} {...props} />
     )
 }
