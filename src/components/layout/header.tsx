@@ -14,6 +14,9 @@ export function Header() {
             <Link href="/support" className="text-lg font-medium text-foreground hover:text-accent">
                 Support
             </Link>
+            <Link href="/privacy-policy" className="text-lg font-medium text-foreground hover:text-accent">
+                Privacy Policy
+            </Link>
         </div>
         <ConnectWallet />
       </nav>
