@@ -11,7 +11,7 @@ import { Info, Loader2, Frown } from "lucide-react";
 
 export function ClaimSection() {
     const { isConnected, address } = useAccount();
-    const { claimsLeft, incrementClaims, canClaim } = useClaimLimit();
+    const { claimsLeft, incrementClaims, canClaim, isInitialized } = useClaimLimit();
 
     const { data: balance, isLoading: isBalanceLoading } = useReadContract({
         address: LINEA_TOKEN_ADDRESS,
@@ -36,7 +36,7 @@ export function ClaimSection() {
         );
     }
     
-    if (isBalanceLoading) {
+    if (isBalanceLoading || !isInitialized) {
         return (
             <Card className="w-full max-w-md text-center bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-6 flex items-center justify-center gap-2">

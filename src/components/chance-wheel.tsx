@@ -56,7 +56,7 @@ const Segment = ({ index, value }: { index: number; value: number }) => {
     );
 }
 
-const SPIN_DURATION_MS = 50000; // 50 seconds for a very slow spin
+const SPIN_DURATION_MS = 8000;
 
 export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const [isClient, setIsClient] = useState(false);
@@ -72,7 +72,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
 
     useEffect(() => { setIsClient(true) }, []);
 
-    const finishSpin = (winningNumber: number) => {
+    const finishSpin = useCallback((winningNumber: number) => {
         setWinningAmount(winningNumber);
         setSpinning(false);
         setShowSkip(false);
@@ -80,7 +80,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             clearTimeout(spinTimeout);
             setSpinTimeout(null);
         }
-    };
+    }, [spinTimeout]);
     
     const handleSpin = () => {
         if (spinning) return;
@@ -91,7 +91,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 3) + 5; // 5 to 7 very slow rotations
+        const randomRotations = Math.floor(Math.random() * 2) + 3; // 3 to 4 rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
@@ -107,7 +107,6 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const handleSkip = () => {
         if (!spinning || !spinTimeout) return;
         
-        // This stops the CSS transition immediately by setting rotation to its current computed value
         const wheel = document.getElementById('wheel');
         if (wheel) {
             const computedStyle = window.getComputedStyle(wheel);
@@ -152,8 +151,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isSuccess, status, toast]); // handleSuccess is removed from dependencies
+    }, [isSuccess, status]);
     
     useEffect(() => {
         if (error) {
@@ -173,16 +171,15 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         };
     }, [spinTimeout]);
 
-    const onTransitionEnd = () => {
+    const onTransitionEnd = useCallback(() => {
         if (!spinning) return;
-        // The spinning has naturally ended. Find the winning number.
         const currentRotation = rotation % 360;
-        const pointerOffset = 270; // The pointer is at the top, which is -90 or 270 degrees
+        const pointerOffset = 270;
         const effectiveRotation = (360 - currentRotation + pointerOffset) % 360;
         const winningSegmentIndex = Math.floor(effectiveRotation / segmentAngle);
         const winningNumber = segments[winningSegmentIndex];
         finishSpin(winningNumber);
-    };
+    }, [rotation, spinning, finishSpin]);
 
     if (!isClient) {
         return <div className="w-80 h-80 md:w-96 md:h-96 bg-card/20 animate-pulse rounded-full" />;
