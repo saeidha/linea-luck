@@ -62,12 +62,24 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const [rotation, setRotation] = useState(0);
     const [winningAmount, setWinningAmount] = useState<number | null>(null);
     const { toast } = useToast();
+    const [spinTimeout, setSpinTimeout] = useState<NodeJS.Timeout | null>(null);
+    const [showSkip, setShowSkip] = useState(false);
 
     const { data: hash, error, isPending, writeContract, reset } = useWriteContract();
     const { isLoading: isConfirming, isSuccess, status } = useWaitForTransactionReceipt({ hash });
 
     useEffect(() => { setIsClient(true) }, []);
 
+    const finishSpin = (winningNumber: number) => {
+        setWinningAmount(winningNumber);
+        setSpinning(false);
+        setShowSkip(false);
+        if (spinTimeout) {
+            clearTimeout(spinTimeout);
+            setSpinTimeout(null);
+        }
+    };
+    
     const handleSpin = () => {
         if (spinning) return;
         setSpinning(true);
@@ -83,10 +95,21 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         
         setRotation(newRotation);
 
-        setTimeout(() => {
-          setWinningAmount(winningNumber);
-          setSpinning(false);
-        }, 4000);
+        setShowSkip(true);
+        const timeout = setTimeout(() => {
+          finishSpin(winningNumber);
+        }, 6000);
+        setSpinTimeout(timeout);
+    };
+
+    const handleSkip = () => {
+        if (!spinning || !spinTimeout) return;
+        
+        const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
+        const winningNumber = segments[winningSegmentIndex];
+        
+        setRotation(rotation);
+        finishSpin(winningNumber);
     };
 
     const handleClaim = () => {
@@ -114,7 +137,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [status]);
+    }, [status, onClaimSuccess, toast, winningAmount]);
     
     useEffect(() => {
         if (error) {
@@ -124,7 +147,15 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [error]);
+    }, [error, toast]);
+
+    useEffect(() => {
+        return () => {
+            if (spinTimeout) {
+                clearTimeout(spinTimeout);
+            }
+        };
+    }, [spinTimeout]);
 
     if (!isClient) {
         return <div className="w-80 h-80 md:w-96 md:h-96 bg-card/20 animate-pulse rounded-full" />;
@@ -133,14 +164,14 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const isProcessing = spinning || isPending || isConfirming;
 
     return (
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-4">
             <div className="relative w-80 h-80 md:w-96 md:h-96">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10" style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }}>
                     <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[20px] border-l-transparent border-r-transparent border-t-accent" />
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[4000ms] ease-out"
+                    className="w-full h-full transition-transform duration-[6000ms] ease-out"
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
@@ -166,6 +197,12 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                     </div>
                 </div>
             </div>
+
+            {showSkip && (
+                <Button variant="link" onClick={handleSkip} disabled={!spinning}>
+                    Skip animation
+                </Button>
+            )}
 
             <div className="text-center">
                 <p className="text-foreground/80">You have</p>
