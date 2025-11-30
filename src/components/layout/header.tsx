@@ -1,5 +1,6 @@
 import { ConnectWallet } from "@/components/connect-wallet";
 import { AtbIcon } from "@/components/icons";
+import Link from "next/link";
 
 export function Header() {
   return (
@@ -10,6 +11,9 @@ export function Header() {
             <h1 className="text-2xl font-bold text-foreground">
                 Linea Luck
             </h1>
+            <Link href="/support" className="text-lg font-medium text-foreground hover:text-accent">
+                Support
+            </Link>
         </div>
         <ConnectWallet />
       </nav>
