@@ -85,7 +85,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningNumber = segments[winningSegmentIndex];
         setFinalWinningNumber(winningNumber);
         
-        const randomRotations = Math.floor(Math.random() * 5) + 5;
+        const randomRotations = Math.floor(Math.random() * 3) + 10;
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
@@ -144,7 +144,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [isSuccess, status, onClaimSuccess, toast, winningAmount]);
+    }, [isSuccess, status]);
     
     useEffect(() => {
         if (error) {
@@ -195,7 +195,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                             ATB
                         </Button>
                     ) : (
-                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={spinning || isProcessing}>
+                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={spinning || isProcessing || claimsLeft <= 0}>
                             {spinning ? 'Spinning' : isPending ? 'Sending' : isConfirming ? 'Waiting' : 'Spin'}
                         </Button>
                     )}
