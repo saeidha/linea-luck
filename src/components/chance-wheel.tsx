@@ -98,7 +98,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         setShowSkip(true);
         const timeout = setTimeout(() => {
           finishSpin(winningNumber);
-        }, 6000);
+        }, 8000);
         setSpinTimeout(timeout);
     };
 
@@ -171,7 +171,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[6000ms] ease-out"
+                    className="w-full h-full transition-transform duration-[8000ms] ease-out"
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
