@@ -89,23 +89,17 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         reset();
 
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
-        const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 2) + 3; // 3 to 4 rotations
+        const randomRotations = Math.floor(Math.random() * 5) + 5; // 5 to 9 rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
         setRotation(newRotation);
-
         setShowSkip(true);
-        const timeout = setTimeout(() => {
-          finishSpin(winningNumber);
-        }, SPIN_DURATION_MS); 
-        setSpinTimeout(timeout);
     };
 
     const handleSkip = () => {
-        if (!spinning || !spinTimeout) return;
+        if (!spinning) return;
         
         const wheel = document.getElementById('wheel');
         if (wheel) {
@@ -113,17 +107,15 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             const transform = computedStyle.transform;
             const matrix = new DOMMatrix(transform);
             const currentRotation = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
-            setRotation(rotation - (rotation % 360) + (currentRotation < 0 ? currentRotation + 360 : currentRotation));
+            
+            // Set rotation to a nearby final position
+            const finalRotation = rotation - (rotation % 360) + currentRotation;
+            setRotation(finalRotation);
         }
-
-        const currentTargetRotation = rotation;
-        const fullRotations = Math.floor(currentTargetRotation / 360);
-        const baseRotation = currentTargetRotation - (fullRotations * 360);
-
-        const segmentThatWouldWinIndex = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
-        const winningNumber = segments[segmentThatWouldWinIndex < 0 ? segmentThatWouldWinIndex + totalSegments : segmentThatWouldWinIndex];
         
-        finishSpin(winningNumber);
+        // This will trigger onTransitionEnd almost immediately
+        setSpinning(false);
+        setShowSkip(false);
     };
 
     const handleClaim = () => {
@@ -151,7 +143,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [isSuccess, status]);
+    }, [isSuccess, status, onClaimSuccess, toast, winningAmount]);
     
     useEffect(() => {
         if (error) {
@@ -163,29 +155,23 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         }
     }, [error, toast]);
 
-    useEffect(() => {
-        return () => {
-            if (spinTimeout) {
-                clearTimeout(spinTimeout);
-            }
-        };
-    }, [spinTimeout]);
-
     const onTransitionEnd = useCallback(() => {
-        if (!spinning) return;
-        const currentRotation = rotation % 360;
-        const pointerOffset = 270;
-        const effectiveRotation = (360 - currentRotation + pointerOffset) % 360;
+        if (!spinning && !showSkip) return; // Only run if initiated by spin or skip
+        
+        const finalRotation = rotation % 360;
+        const pointerOffset = 270; // Pointer is at the top (270deg in SVG coords)
+        const effectiveRotation = (360 - finalRotation + pointerOffset) % 360;
         const winningSegmentIndex = Math.floor(effectiveRotation / segmentAngle);
         const winningNumber = segments[winningSegmentIndex];
+
         finishSpin(winningNumber);
-    }, [rotation, spinning, finishSpin]);
+    }, [rotation, spinning, showSkip, finishSpin]);
 
     if (!isClient) {
         return <div className="w-80 h-80 md:w-96 md:h-96 bg-card/20 animate-pulse rounded-full" />;
     }
     
-    const isProcessing = spinning || isPending || isConfirming;
+    const isProcessing = isPending || isConfirming;
 
     return (
         <div className="flex flex-col items-center gap-4">
@@ -199,7 +185,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                     className="w-full h-full"
                     style={{ 
                         transform: `rotate(${rotation}deg)`,
-                        transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` : 'none',
+                        transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` : 'transform 0.5s ease-out',
                      }}
                     onTransitionEnd={onTransitionEnd}
                 >
@@ -212,14 +198,14 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-36 h-36 rounded-full bg-background flex items-center justify-center shadow-inner-lg flex-col p-2 text-center">
-                    {winningAmount && !isPending && !isConfirming && !isSuccess ? (
-                        <Button size="lg" className="h-28 w-28 rounded-full flex-col leading-tight" onClick={handleClaim}>
+                    {winningAmount !== null && !isProcessing && !isSuccess ? (
+                        <Button size="lg" className="h-28 w-28 rounded-full flex-col leading-tight" onClick={handleClaim} disabled={isProcessing}>
                             Claim
                             <span className="text-3xl font-bold">{winningAmount}</span>
                             ATB
                         </Button>
                     ) : (
-                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={isProcessing}>
+                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={spinning || isProcessing}>
                             {spinning ? 'Spinning' : isPending ? 'Sending' : isConfirming ? 'Waiting' : 'Spin'}
                         </Button>
                     )}
