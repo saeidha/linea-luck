@@ -1,12 +1,9 @@
 import type { SVGProps } from "react";
+import Image from "next/image";
 
-export function LineaIcon(props: SVGProps<SVGSVGElement>) {
+export function LineaIcon(props: Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>) {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <circle cx="12" cy="12" r="10" fill="hsl(var(--primary) / 0.3)" stroke="none" />
-            <path d="M9 9v6h6" stroke="hsl(var(--primary))" />
-            <circle cx="15" cy="9" r="1" fill="hsl(var(--primary))" stroke="none" />
-        </svg>
+        <Image src="/assets/Linea-Token_Round.png" alt="Linea Token" {...props} />
     )
 }
 
