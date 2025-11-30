@@ -107,15 +107,22 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const handleSkip = () => {
         if (!spinning || !spinTimeout) return;
         
+        // This stops the CSS transition immediately by setting rotation to its current computed value
+        const wheel = document.getElementById('wheel');
+        if (wheel) {
+            const computedStyle = window.getComputedStyle(wheel);
+            const transform = computedStyle.transform;
+            const matrix = new DOMMatrix(transform);
+            const currentRotation = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
+            setRotation(rotation - (rotation % 360) + (currentRotation < 0 ? currentRotation + 360 : currentRotation));
+        }
+
         const currentTargetRotation = rotation;
         const fullRotations = Math.floor(currentTargetRotation / 360);
         const baseRotation = currentTargetRotation - (fullRotations * 360);
 
         const segmentThatWouldWinIndex = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
         const winningNumber = segments[segmentThatWouldWinIndex < 0 ? segmentThatWouldWinIndex + totalSegments : segmentThatWouldWinIndex];
-        
-        // This stops the CSS transition immediately
-        setRotation(currentTargetRotation); 
         
         finishSpin(winningNumber);
     };
@@ -130,18 +137,14 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         });
     };
     
-    const handleSuccess = useCallback(() => {
-        toast({
-            title: "Claim Successful!",
-            description: `You've successfully claimed ${winningAmount} ATB tokens.`,
-        });
-        onClaimSuccess();
-        setWinningAmount(null);
-    }, [onClaimSuccess, toast, winningAmount]);
-
     useEffect(() => {
         if (isSuccess) {
-            handleSuccess();
+            toast({
+                title: "Claim Successful!",
+                description: `You've successfully claimed ${winningAmount} ATB tokens.`,
+            });
+            onClaimSuccess();
+            setWinningAmount(null);
         } else if (status === 'reverted') {
             toast({
                 title: "Claim Failed",
@@ -149,7 +152,8 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [isSuccess, status, toast, handleSuccess]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSuccess, status, toast]); // handleSuccess is removed from dependencies
     
     useEffect(() => {
         if (error) {
@@ -194,6 +198,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
+                    id="wheel"
                     className="w-full h-full"
                     style={{ 
                         transform: `rotate(${rotation}deg)`,
