@@ -64,39 +64,42 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const [rotation, setRotation] = useState(0);
     const [winningAmount, setWinningAmount] = useState<number | null>(null);
     const { toast } = useToast();
-    const [spinTimeout, setSpinTimeout] = useState<NodeJS.Timeout | null>(null);
     const [showSkip, setShowSkip] = useState(false);
+
+    const [finalWinningNumber, setFinalWinningNumber] = useState<number | null>(null);
 
     const { data: hash, error, isPending, writeContract, reset } = useWriteContract();
     const { isLoading: isConfirming, isSuccess, status } = useWaitForTransactionReceipt({ hash });
 
     useEffect(() => { setIsClient(true) }, []);
-
-    const finishSpin = useCallback((winningNumber: number) => {
-        setWinningAmount(winningNumber);
-        setSpinning(false);
-        setShowSkip(false);
-        if (spinTimeout) {
-            clearTimeout(spinTimeout);
-            setSpinTimeout(null);
-        }
-    }, [spinTimeout]);
     
     const handleSpin = () => {
         if (spinning) return;
+        
         setSpinning(true);
         setWinningAmount(null);
+        setFinalWinningNumber(null);
         reset();
 
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
+        const winningNumber = segments[winningSegmentIndex];
+        setFinalWinningNumber(winningNumber);
         
-        const randomRotations = Math.floor(Math.random() * 5) + 5; // 5 to 9 rotations
+        const randomRotations = Math.floor(Math.random() * 5) + 5;
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
         setRotation(newRotation);
         setShowSkip(true);
     };
+
+    const onSpinEnd = useCallback(() => {
+        if (!finalWinningNumber) return;
+        setWinningAmount(finalWinningNumber);
+        setSpinning(false);
+        setShowSkip(false);
+    }, [finalWinningNumber]);
+
 
     const handleSkip = () => {
         if (!spinning) return;
@@ -108,14 +111,11 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             const matrix = new DOMMatrix(transform);
             const currentRotation = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
             
-            // Set rotation to a nearby final position
             const finalRotation = rotation - (rotation % 360) + currentRotation;
             setRotation(finalRotation);
         }
         
-        // This will trigger onTransitionEnd almost immediately
-        setSpinning(false);
-        setShowSkip(false);
+        onSpinEnd();
     };
 
     const handleClaim = () => {
@@ -136,6 +136,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             });
             onClaimSuccess();
             setWinningAmount(null);
+            setFinalWinningNumber(null);
         } else if (status === 'reverted') {
             toast({
                 title: "Claim Failed",
@@ -155,17 +156,6 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         }
     }, [error, toast]);
 
-    const onTransitionEnd = useCallback(() => {
-        if (!spinning && !showSkip) return; // Only run if initiated by spin or skip
-        
-        const finalRotation = rotation % 360;
-        const pointerOffset = 270; // Pointer is at the top (270deg in SVG coords)
-        const effectiveRotation = (360 - finalRotation + pointerOffset) % 360;
-        const winningSegmentIndex = Math.floor(effectiveRotation / segmentAngle);
-        const winningNumber = segments[winningSegmentIndex];
-
-        finishSpin(winningNumber);
-    }, [rotation, spinning, showSkip, finishSpin]);
 
     if (!isClient) {
         return <div className="w-80 h-80 md:w-96 md:h-96 bg-card/20 animate-pulse rounded-full" />;
@@ -187,7 +177,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                         transform: `rotate(${rotation}deg)`,
                         transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` : 'transform 0.5s ease-out',
                      }}
-                    onTransitionEnd={onTransitionEnd}
+                    onTransitionEnd={onSpinEnd}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                         {segments.map((segment, index) => (
