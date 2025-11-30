@@ -100,7 +100,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
           // This will be called if the animation ends, but we'll also handle the transition end event
           // to make it more accurate.
           finishSpin(winningNumber);
-        }, 5000); 
+        }, 8000); 
         setSpinTimeout(timeout);
     };
 
@@ -182,7 +182,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[5000ms] ease-[cubic-bezier(0.1,0.7,0.3,1)]"
+                    className="w-full h-full transition-transform duration-[8000ms] ease-[cubic-bezier(0.1,0.7,0.3,1)]"
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
