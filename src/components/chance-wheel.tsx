@@ -89,7 +89,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 3) + 10; // 10 to 12 rotations
+        const randomRotations = Math.floor(Math.random() * 3) + 20; // 20 to 22 rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
@@ -98,7 +98,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         setShowSkip(true);
         const timeout = setTimeout(() => {
           finishSpin(winningNumber);
-        }, 30000); 
+        }, 50000); 
         setSpinTimeout(timeout);
     };
 
@@ -176,7 +176,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[30000ms] ease-[cubic-bezier(0.25,0.1,0.25,1.0)]"
+                    className="w-full h-full transition-transform duration-[50000ms] ease-[cubic-bezier(0.25,0.1,0.25,1.0)]"
                     style={{ transform: `rotate(${rotation}deg)` }}
                     onTransitionEnd={() => {
                         if (!spinning) return;
