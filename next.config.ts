@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      '@react-native-async-storage/async-storage': false,
+      'pino-pretty': false,
+      'porto': false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

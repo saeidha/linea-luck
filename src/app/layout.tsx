@@ -1,7 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Web3Provider } from '@/components/providers/web3-provider';
 import { Toaster } from "@/components/ui/toaster";
+import AppWrapper from './app-wrapper';
 
 export const metadata: Metadata = {
   title: 'Linea Luck',
@@ -21,9 +21,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <Web3Provider>
+        <AppWrapper>
           {children}
-        </Web3Provider>
+        </AppWrapper>
         <Toaster />
       </body>
     </html>
