@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
@@ -56,6 +56,8 @@ const Segment = ({ index, value }: { index: number; value: number }) => {
     );
 }
 
+const SPIN_DURATION_MS = 50000; // 50 seconds for a very slow spin
+
 export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const [isClient, setIsClient] = useState(false);
     const [spinning, setSpinning] = useState(false);
@@ -89,7 +91,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
         
-        const randomRotations = Math.floor(Math.random() * 3) + 200; // 200 to 202 rotations
+        const randomRotations = Math.floor(Math.random() * 3) + 5; // 5 to 7 very slow rotations
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
         const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
@@ -98,7 +100,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         setShowSkip(true);
         const timeout = setTimeout(() => {
           finishSpin(winningNumber);
-        }, 50000); 
+        }, SPIN_DURATION_MS); 
         setSpinTimeout(timeout);
     };
 
@@ -109,10 +111,11 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         const fullRotations = Math.floor(currentTargetRotation / 360);
         const baseRotation = currentTargetRotation - (fullRotations * 360);
 
-        const segmentThatWouldWin = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
-        const winningNumber = segments[segmentThatWouldWin];
-
-        setRotation(currentTargetRotation);
+        const segmentThatWouldWinIndex = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
+        const winningNumber = segments[segmentThatWouldWinIndex < 0 ? segmentThatWouldWinIndex + totalSegments : segmentThatWouldWinIndex];
+        
+        // This stops the CSS transition immediately
+        setRotation(currentTargetRotation); 
         
         finishSpin(winningNumber);
     };
@@ -126,15 +129,19 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             args: [BigInt(winningAmount)],
         });
     };
+    
+    const handleSuccess = useCallback(() => {
+        toast({
+            title: "Claim Successful!",
+            description: `You've successfully claimed ${winningAmount} ATB tokens.`,
+        });
+        onClaimSuccess();
+        setWinningAmount(null);
+    }, [onClaimSuccess, toast, winningAmount]);
 
     useEffect(() => {
-        if (status === 'success') {
-            toast({
-                title: "Claim Successful!",
-                description: `You've successfully claimed ${winningAmount} ATB tokens.`,
-            });
-            onClaimSuccess();
-            setWinningAmount(null);
+        if (isSuccess) {
+            handleSuccess();
         } else if (status === 'reverted') {
             toast({
                 title: "Claim Failed",
@@ -142,7 +149,7 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 variant: 'destructive'
             });
         }
-    }, [status, onClaimSuccess, toast, winningAmount]);
+    }, [isSuccess, status, toast, handleSuccess]);
     
     useEffect(() => {
         if (error) {
@@ -162,6 +169,17 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
         };
     }, [spinTimeout]);
 
+    const onTransitionEnd = () => {
+        if (!spinning) return;
+        // The spinning has naturally ended. Find the winning number.
+        const currentRotation = rotation % 360;
+        const pointerOffset = 270; // The pointer is at the top, which is -90 or 270 degrees
+        const effectiveRotation = (360 - currentRotation + pointerOffset) % 360;
+        const winningSegmentIndex = Math.floor(effectiveRotation / segmentAngle);
+        const winningNumber = segments[winningSegmentIndex];
+        finishSpin(winningNumber);
+    };
+
     if (!isClient) {
         return <div className="w-80 h-80 md:w-96 md:h-96 bg-card/20 animate-pulse rounded-full" />;
     }
@@ -176,18 +194,12 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                 </div>
                 
                 <div 
-                    className="w-full h-full transition-transform duration-[50000ms] ease-[cubic-bezier(0.25,0.1,0.25,1.0)]"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                    onTransitionEnd={() => {
-                        if (!spinning) return;
-                        const currentTargetRotation = rotation;
-                        const fullRotations = Math.floor(currentTargetRotation / 360);
-                        const baseRotation = currentTargetRotation - (fullRotations * 360);
-
-                        const segmentThatWouldWin = Math.round((360 - baseRotation - (segmentAngle/2)) / segmentAngle) % totalSegments;
-                        const winningNumber = segments[segmentThatWouldWin];
-                        finishSpin(winningNumber);
-                    }}
+                    className="w-full h-full"
+                    style={{ 
+                        transform: `rotate(${rotation}deg)`,
+                        transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` : 'none',
+                     }}
+                    onTransitionEnd={onTransitionEnd}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                         {segments.map((segment, index) => (
