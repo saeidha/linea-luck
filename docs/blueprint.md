@@ -3,7 +3,7 @@
 ## Core Features:
 
 - Chance Wheel: A spinning wheel interface that determines the amount of ATB tokens the user can claim, ranging from 1 to 10.
-- Eligibility Check: Checks if the user holds Linea tokens to allow them to claim ATB tokens. The contract address in Linea is 0x29380Ed69d0012E2Fa825B7ECC8751ebB21Aa79d
+- Eligibility Check: Checks if the user holds Linea tokens to allow them to claim ATB tokens. The contract address in Linea is 0xCD12d603Ec87fB41a5F21EA2e1590470Dbe9F9CB
 - Claim Limit: Limits users to 20 claims per day. Resets every 24 hours.
 - Token Claim: Interface for users to claim ATB tokens based on the amount decided by the chance wheel using the claim solidity function.
 - Wallet Connection: Uses WalletConnect with project key 329e1a5ee4c1257164938ef55efec576 to connect the user's wallet to the app.
