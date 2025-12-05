@@ -1,7 +1,7 @@
 export const LINEA_TOKEN_ADDRESS = '0x1789e0043623282D5DCc7F213d703C6D8BAfBB04';
 
 // This is a placeholder address. In a real application, this would be the deployed contract address.
-export const ATB_TOKEN_ADDRESS = '0xCD12d603Ec87fB41a5F21EA2e1590470Dbe9F9CB';
+export const ATB_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_ATB_TOKEN_ADDRESS || '0xCD12d603Ec87fB41a5F21EA2e1590470Dbe9F9CB';
 
 export const LINEA_TOKEN_ABI = [
   {
