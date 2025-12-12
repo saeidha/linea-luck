@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
@@ -56,17 +56,13 @@ const Segment = ({ index, value }: { index: number; value: number }) => {
     );
 }
 
-const SPIN_DURATION_MS = 8000;
+
 
 export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     const [isClient, setIsClient] = useState(false);
-    const [spinning, setSpinning] = useState(false);
     const [rotation, setRotation] = useState(0);
     const [winningAmount, setWinningAmount] = useState<number | null>(null);
     const { toast } = useToast();
-    const [showSkip, setShowSkip] = useState(false);
-
-    const [finalWinningNumber, setFinalWinningNumber] = useState<number | null>(null);
 
     const { data: hash, error, isPending, writeContract, reset } = useWriteContract();
     const { isLoading: isConfirming, isSuccess, status } = useWaitForTransactionReceipt({ hash });
@@ -74,48 +70,16 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
     useEffect(() => { setIsClient(true) }, []);
     
     const handleSpin = () => {
-        if (spinning) return;
-        
-        setSpinning(true);
         setWinningAmount(null);
-        setFinalWinningNumber(null);
         reset();
 
         const winningSegmentIndex = Math.floor(Math.random() * totalSegments);
         const winningNumber = segments[winningSegmentIndex];
-        setFinalWinningNumber(winningNumber);
         
-        const randomRotations = Math.floor(Math.random() * 3) + 10;
         const targetAngle = 360 - (winningSegmentIndex * segmentAngle) - (segmentAngle / 2);
-        const newRotation = rotation + (randomRotations * 360) + targetAngle;
         
-        setRotation(newRotation);
-        setShowSkip(true);
-    };
-
-    const onSpinEnd = useCallback(() => {
-        if (!finalWinningNumber) return;
-        setWinningAmount(finalWinningNumber);
-        setSpinning(false);
-        setShowSkip(false);
-    }, [finalWinningNumber]);
-
-
-    const handleSkip = () => {
-        if (!spinning) return;
-        
-        const wheel = document.getElementById('wheel');
-        if (wheel) {
-            const computedStyle = window.getComputedStyle(wheel);
-            const transform = computedStyle.transform;
-            const matrix = new DOMMatrix(transform);
-            const currentRotation = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
-            
-            const finalRotation = rotation - (rotation % 360) + currentRotation;
-            setRotation(finalRotation);
-        }
-        
-        onSpinEnd();
+        setRotation(targetAngle);
+        setWinningAmount(winningNumber);
     };
 
     const handleClaim = () => {
@@ -136,7 +100,6 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
             });
             onClaimSuccess();
             setWinningAmount(null);
-            setFinalWinningNumber(null);
         } else if (status === 'reverted') {
             toast({
                 title: "Claim Failed",
@@ -175,9 +138,8 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                     className="w-full h-full"
                     style={{ 
                         transform: `rotate(${rotation}deg)`,
-                        transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` : 'transform 0.5s ease-out',
+                        transition: 'none',
                      }}
-                    onTransitionEnd={onSpinEnd}
                 >
                     <svg viewBox="-1.05 -1.05 2.1 2.1" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                         {segments.map((segment, index) => (
@@ -195,19 +157,13 @@ export function ChanceWheel({ claimsLeft, onClaimSuccess }: ChanceWheelProps) {
                             ATB
                         </Button>
                     ) : (
-                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={spinning || isProcessing || claimsLeft <= 0}>
-                            {spinning ? 'Spinning' : isPending ? 'Sending' : isConfirming ? 'Waiting' : 'Spin'}
+                        <Button size="lg" className="h-28 w-28 rounded-full" onClick={handleSpin} disabled={isProcessing || claimsLeft <= 0}>
+                            {isPending ? 'Sending' : isConfirming ? 'Waiting' : 'Spin'}
                         </Button>
                     )}
                     </div>
                 </div>
             </div>
-
-            {showSkip && (
-                <Button variant="link" onClick={handleSkip} disabled={!spinning}>
-                    Skip animation
-                </Button>
-            )}
 
             <div className="text-center">
                 <p className="text-foreground/80">You have</p>
