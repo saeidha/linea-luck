@@ -66,7 +66,7 @@ export function DailyRewardButton() {
         <div className="flex flex-col items-center gap-2 mb-4 w-full max-w-xs animate-in fade-in zoom-in duration-500">
             <Button
                 onClick={handleClaim}
-                disabled={isPending || !contractAddress || !canClaim}
+                disabled={!contractAddress || !canClaim}
                 className={cn(
                     "w-full relative overflow-hidden transition-all duration-300 transform hover:scale-105 active:scale-95 group",
                     "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700",
