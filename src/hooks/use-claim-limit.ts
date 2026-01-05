@@ -16,32 +16,48 @@ export function useClaimLimit() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
-    try {
-      const storedData = localStorage.getItem(STORAGE_KEY);
-      const today = new Date().toISOString().split('T')[0];
 
-      if (storedData) {
-        const parsedData: ClaimData = JSON.parse(storedData);
-        if (parsedData.date === today) {
-          setClaimData(parsedData);
+    const loadData = () => {
+      try {
+        const storedData = localStorage.getItem(STORAGE_KEY);
+        const today = new Date().toISOString().split('T')[0];
+
+        if (storedData) {
+          const parsedData: ClaimData = JSON.parse(storedData);
+          if (parsedData.date === today) {
+            setClaimData(parsedData);
+          } else {
+            const newDayData = { count: 0, date: today };
+            setClaimData(newDayData);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newDayData));
+          }
         } else {
-          const newDayData = { count: 0, date: today };
-          setClaimData(newDayData);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(newDayData));
+          const initialData = { count: 0, date: today };
+          setClaimData(initialData);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
         }
-      } else {
-        const initialData = { count: 0, date: today };
-        setClaimData(initialData);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      }
-    } catch (error) {
+      } catch (error) {
         console.error("Failed to access local storage", error);
         const today = new Date().toISOString().split('T')[0];
         setClaimData({ count: 0, date: today });
-    } finally {
+      } finally {
         setIsInitialized(true);
-    }
+      }
+    };
+
+    loadData();
+
+    const handleStorageChange = () => {
+      loadData();
+    };
+
+    window.addEventListener('linea-luck-claims-updated', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('linea-luck-claims-updated', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const incrementClaims = useCallback(() => {
@@ -49,13 +65,14 @@ export function useClaimLimit() {
       const newData = { ...prevData, count: prevData.count + 1 };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+        window.dispatchEvent(new Event('linea-luck-claims-updated'));
       } catch (error) {
         console.error("Failed to write to local storage", error);
       }
       return newData;
     });
   }, []);
-  
+
   const claimsLeft = DAILY_CLAIM_LIMIT - claimData.count;
   const canClaim = isInitialized && claimsLeft > 0;
 
