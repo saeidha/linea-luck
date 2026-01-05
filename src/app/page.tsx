@@ -2,6 +2,8 @@ import { ClaimSection } from "@/components/claim-section";
 import { Header } from "@/components/layout/header";
 import { AtbIcon, LineaIcon } from "@/components/icons";
 
+import { DailyRewardButton } from "@/components/daily-reward-button";
+
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
@@ -18,8 +20,9 @@ export default function Home() {
           <ClaimSection />
         </div>
       </main>
-      <footer className="text-center p-4 text-sm text-muted-foreground">
-        Connect your wallet on the Linea network to participate.
+      <footer className="text-center p-4 text-sm text-muted-foreground flex flex-col items-center gap-4">
+        <DailyRewardButton />
+        <p>Connect your wallet on the Linea network to participate.</p>
       </footer>
     </div>
   );

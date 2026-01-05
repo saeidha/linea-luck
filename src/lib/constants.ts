@@ -32,3 +32,13 @@ export const ATB_TOKEN_ABI = [
 ] as const;
 
 export const DAILY_CLAIM_LIMIT = 20;
+
+export const TRY_TO_LUCK_ABI = [
+  {
+    "inputs": [],
+    "name": "tryClaimDailyReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
