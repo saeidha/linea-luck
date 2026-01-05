@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useState } from "react";
+import { useAccount, useWriteContract, useConfig } from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, Gift } from "lucide-react";
 import { TRY_TO_LUCK_ABI } from "@/lib/constants";
@@ -10,31 +11,53 @@ import { useClaimLimit } from "@/hooks/use-claim-limit";
 
 export function DailyRewardButton() {
     const { isConnected } = useAccount();
-    const { data: hash, writeContract, isPending, error: writeError } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-        hash,
-    });
+    const { writeContractAsync, isPending, error: writeError } = useWriteContract();
+    const config = useConfig();
     const { incrementClaims, canClaim } = useClaimLimit();
+
+    const [pendingClaims, setPendingClaims] = useState(0);
+    const [lastClaimed, setLastClaimed] = useState(false);
 
     const contractAddress = process.env.NEXT_PUBLIC_TRY_TO_LUCK_TOKEN_ADDRESS as `0x${string}`;
 
-    const handleClaim = () => {
+    const handleClaim = async () => {
         if (!contractAddress) {
             console.error("Contract address not set");
             return;
         }
-        writeContract({
-            address: contractAddress,
-            abi: TRY_TO_LUCK_ABI,
-            functionName: 'tryClaimDailyReward',
-        });
+
+        try {
+            const hash = await writeContractAsync({
+                address: contractAddress,
+                abi: TRY_TO_LUCK_ABI,
+                functionName: 'tryClaimDailyReward',
+            });
+
+            setPendingClaims(prev => prev + 1);
+            setLastClaimed(false);
+
+            // Fire and forget waiting process
+            processTransaction(hash);
+
+        } catch (error) {
+            console.error("Failed to submit transaction", error);
+        }
     };
 
-    useEffect(() => {
-        if (isConfirmed) {
+    const processTransaction = async (hash: `0x${string}`) => {
+        try {
+            await waitForTransactionReceipt(config, { hash });
             incrementClaims();
+            if (pendingClaims <= 1) { // If this was the last one
+                setLastClaimed(true);
+                setTimeout(() => setLastClaimed(false), 3000);
+            }
+        } catch (error) {
+            console.error("Transaction failed", error);
+        } finally {
+            setPendingClaims(prev => Math.max(0, prev - 1));
         }
-    }, [isConfirmed, incrementClaims]);
+    };
 
     // Render only if connected.
     if (!isConnected) return null;
@@ -43,11 +66,10 @@ export function DailyRewardButton() {
         <div className="flex flex-col items-center gap-2 mb-4 w-full max-w-xs animate-in fade-in zoom-in duration-500">
             <Button
                 onClick={handleClaim}
-                disabled={isPending || isConfirming || !contractAddress || !canClaim}
+                disabled={isPending || !contractAddress || !canClaim}
                 className={cn(
                     "w-full relative overflow-hidden transition-all duration-300 transform hover:scale-105 active:scale-95 group",
-                    "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700", // Changed colors to match "Linea" purple/dark theme maybe? Or stick to Gold/Reward theme?
-                    // Let's go with Gold/Amber for "Reward" as before, it looked premium.
+                    "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700",
                     "bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-600 hover:via-orange-600 hover:to-yellow-600",
                     "text-white font-bold py-6 rounded-xl shadow-lg hover:shadow-orange-500/25 border-0",
                     !canClaim && "opacity-50 cursor-not-allowed hover:scale-100"
@@ -56,12 +78,12 @@ export function DailyRewardButton() {
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12" />
 
                 <div className="relative flex items-center justify-center gap-2 text-lg">
-                    {isPending || isConfirming ? (
+                    {isPending ? (
                         <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            {isPending ? "Confirming..." : "Claiming..."}
+                            Confirming...
                         </>
-                    ) : isConfirmed ? (
+                    ) : lastClaimed && pendingClaims === 0 ? (
                         <>
                             <Sparkles className="h-5 w-5 animate-bounce" />
                             Claimed!
@@ -72,8 +94,12 @@ export function DailyRewardButton() {
                         </>
                     ) : (
                         <>
-                            <Gift className="h-5 w-5 animate-pulse" />
-                            Claim Daily Reward
+                            {pendingClaims > 0 ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <Gift className="h-5 w-5 animate-pulse" />
+                            )}
+                            {pendingClaims > 0 ? `Claiming (${pendingClaims})...` : "Claim Daily Reward"}
                         </>
                     )}
                 </div>
